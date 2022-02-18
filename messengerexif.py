@@ -139,20 +139,18 @@ def read_json_files(folder_path, exiftool_path, backup=False, fail_fast=False):
     path = Path(folder_path).joinpath("**").joinpath("*.json")
     print(f"Reading json files in {str(folder_path)}...")
     for file in glob.iglob(str(path), recursive=True):
-        photos, videos, gifs = read_json(file)
-        for photo in photos + gifs:
-            run_exiftool(
-                exiftool_path, folder_path, photo, backup=backup, fail_fast=fail_fast
-            )
-        for video in videos:
-            run_exiftool(
-                exiftool_path,
-                folder_path,
-                video,
-                is_video=True,
-                backup=backup,
-                fail_fast=fail_fast,
-            )
+        file_medias = read_json(file)
+        for media_type in file_medias:
+            medias = file_medias[media_type]
+            for i, media in enumerate(medias):
+                run_exiftool(
+                    exiftool_path,
+                    folder_path,
+                    media,
+                    is_video=(media_type=="video"),
+                    backup=backup,
+                    fail_fast=fail_fast
+                )
 
 
 def normalize_json(meta, timestamp=None):
@@ -175,7 +173,7 @@ def read_json(path):
     with open(path, "r") as f:
         json_file = json.load(f)
     if "messages" not in json_file:
-        return [], [], []
+        return {}
     messages = json_file["messages"]
     photos = []
     videos = []
@@ -197,7 +195,7 @@ def read_json(path):
     ]:
         gifs.extend(x)
     print(f"Found {len(photos)} photos, {len(videos)} videos and {len(gifs)} gifs.\n")
-    return photos, videos, gifs
+    return {"photos": photos, "videos": videos, "gifs": gifs}
 
 
 if __name__ == "__main__":
