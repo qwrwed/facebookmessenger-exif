@@ -6,6 +6,7 @@ import subprocess
 import sys
 import argparse
 import os
+from tqdm import tqdm
 
 #############################
 ###
@@ -123,34 +124,46 @@ def run_exiftool(
         arguments.append(f"-dateTimeOriginal=\"{obj['creation_timestamp']}\"")
         if not backup:
             arguments.append("-overwrite_original")
-        print(f"Running {' '.join([str(exiftool_path)]+arguments+[str(path)])}")
+        # print(f"Running {' '.join([str(exiftool_path)]+arguments+[str(path)])}")
         try:
-            subprocess.run([exiftool_path] + arguments + [path], check=True)
-            print(f"Appended exif data succesfully!")
+            subprocess.run([exiftool_path] + arguments + [path], check=True, stdout=subprocess.DEVNULL)
+            # print(f"Appended exif data succesfully!")
         except Exception as e:
             print(f"exiftool error!")
             if fail_fast:
                 sys.exit(1)
             FILES_WITH_ERRORS.append(str(path))
             print(e)
-    print()
+    # print()
 
 
 def read_json_files(folder_path, exiftool_path, backup=False, fail_fast=False):
     path = Path(folder_path).joinpath("**").joinpath("*.json")
-    print(f"Reading json files in {str(folder_path)}...")
-    for file in glob.iglob(str(path), recursive=True):
+    files = glob.glob(str(path), recursive=True)
+    print(f"Reading JSON files in {str(folder_path)}...")
+    for file_index, file in enumerate(files):
         file_short = os.sep.join(os.path.normpath(file).split(os.path.sep)[-2:])
         file_medias = read_json(file)
+        info = f"file {file_index:0{len(str(len(files)))}}/{len(files)}"
+        if not file_medias:
+            print(f"{info} - {file_short}: No media")
         for media_type in file_medias:
             medias = file_medias[media_type]
-            for i, media in enumerate(medias):
-                print(f"{file_short} {media_type} {i}/{len(medias)}:")
+            sub_info = info + f" - {media_type:6} - {file_short}"
+            if len(medias) == 0:
+                print(f"{sub_info}: None found")
+                continue
+            for i, media in tqdm(
+                enumerate(medias),
+                total=len(medias),
+                leave=True,
+                desc=sub_info
+            ):
                 run_exiftool(
                     exiftool_path,
                     folder_path,
                     media,
-                    is_video=(media_type=="video"),
+                    is_video=(media_type=="videos"),
                     backup=backup,
                     fail_fast=fail_fast
                 )
@@ -172,7 +185,6 @@ def normalize_json(meta, timestamp=None):
 
 
 def read_json(path):
-    print(f"Reading file {path}...")
     with open(path, "r") as f:
         json_file = json.load(f)
     if "messages" not in json_file:
@@ -197,7 +209,6 @@ def read_json(path):
         normalize_json(x["gifs"], x["timestamp_ms"]) for x in messages if "gifs" in x
     ]:
         gifs.extend(x)
-    print(f"Found {len(photos)} photos, {len(videos)} videos and {len(gifs)} gifs.\n")
     return {"photos": photos, "videos": videos, "gifs": gifs}
 
 
