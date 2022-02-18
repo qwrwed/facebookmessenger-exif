@@ -5,6 +5,7 @@ from datetime import datetime
 import subprocess
 import sys
 import argparse
+import os
 
 #############################
 ###
@@ -139,10 +140,12 @@ def read_json_files(folder_path, exiftool_path, backup=False, fail_fast=False):
     path = Path(folder_path).joinpath("**").joinpath("*.json")
     print(f"Reading json files in {str(folder_path)}...")
     for file in glob.iglob(str(path), recursive=True):
+        file_short = os.sep.join(os.path.normpath(file).split(os.path.sep)[-2:])
         file_medias = read_json(file)
         for media_type in file_medias:
             medias = file_medias[media_type]
             for i, media in enumerate(medias):
+                print(f"{file_short} {media_type} {i}/{len(medias)}:")
                 run_exiftool(
                     exiftool_path,
                     folder_path,
