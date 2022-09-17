@@ -1,1 +1,4 @@
+numpy==1.23.3
+opencv-python==4.6.0.66
+PyExifTool==0.5.4
 tqdm==4.62.3
