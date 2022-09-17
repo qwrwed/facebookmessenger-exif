@@ -45,7 +45,6 @@ if __name__ == "__main__":
         exiftool_set_params.append("-overwrite_original")
 
     thumbnail_paths = list(args.input_dir.glob("**/thumbnails/*.jpg"))
-    thumbnail_video_map = {}
     already_mapped_videos = set()
     with exiftool.ExifToolHelper() as et:
         for thumbnail_path in tqdm(thumbnail_paths):
@@ -94,7 +93,6 @@ if __name__ == "__main__":
                         f"{Path(*thumbnail_path.parts[-4:])} => {Path(*video_path.parts[-2:])}"
                     )
                     already_mapped_videos.add(video_path)
-                    thumbnail_video_map[str(thumbnail_path)] = str(video_path)
                     mapped = True
                     if args.show_images:
                         cv2.imshow(video_window_title, firstframe_image)
@@ -116,8 +114,5 @@ if __name__ == "__main__":
                 et.set_tags(thumbnail_path, tags=video_date_metadata)
                 thumbnail_metadata_new = et.get_metadata(thumbnail_path)[0]
             else:
-                thumbnail_video_map[str(thumbnail_path)] = None
                 print(f"{Path(*thumbnail_path.parts[-4:])} => {None}")
 
-        with open("thumbnail_video_map.json", "w+") as f:
-            json.dump(thumbnail_video_map, f, indent=4)
