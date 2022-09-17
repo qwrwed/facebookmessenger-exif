@@ -120,6 +120,7 @@ def run_exiftool(
             arguments.append(f"-CreateDate=\"{obj['creation_timestamp']}\"")
             arguments.append(f"-ModifyDate=\"{obj['creation_timestamp']}\"")
             arguments.append(f"-TrackCreateDate=\"{obj['creation_timestamp']}\"")
+        arguments.append(f"-FileCreateDate=\"{obj['creation_timestamp']}\"")
         arguments.append(f"-CreationDate=\"{obj['creation_timestamp']}\"")
         arguments.append(f"-dateTimeOriginal=\"{obj['creation_timestamp']}\"")
         if not backup:
