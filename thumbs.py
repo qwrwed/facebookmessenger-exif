@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 from pathlib import Path
 
@@ -41,6 +40,12 @@ def get_args():
         action="store_true",
         help="Display image matching process (may cause entire OS to hang)",
     )
+    parser.add_argument(
+        "-b",
+        "--backup",
+        action="store_true",
+        help="Backup modified files",
+    )
     return parser.parse_args(namespace=ProgramArgsNamespace)
 
 
@@ -58,7 +63,13 @@ if __name__ == "__main__":
     input_dir = args.input_dir
     pattern = "*.jpg" if input_dir.parts[-1] == "thumbnails" else "**/thumbnails/*.jpg"
     thumbnail_paths = list(args.input_dir.glob(pattern))
+
     already_mapped_videos = set()
+
+    exiftool_params_write = []
+    if not args.backup:
+        exiftool_params_write.append("-overwrite_original")
+
     with exiftool.ExifToolHelper() as et:
         for thumbnail_path in tqdm(thumbnail_paths):
 
@@ -102,9 +113,9 @@ if __name__ == "__main__":
                     cv2.imshow(video_window_title, firstframe_image)
 
                 if difference < DIFFERENCE_THRESHOLD:
-                    tqdm.write(
-                        f"{Path(*thumbnail_path.parts[-4:])} => {Path(*video_path.parts[-2:])}"
-                    )
+                    # tqdm.write(
+                    #     f"{Path(*thumbnail_path.parts[-4:])} => {Path(*video_path.parts[-2:])}"
+                    # )
                     already_mapped_videos.add(video_path)
                     mapped = True
                     if args.show_images_unsafe:
@@ -124,7 +135,19 @@ if __name__ == "__main__":
                     for tag, value in video_metadata.items()
                     if tag in thumbnail_metadata and tag.endswith("Date")
                 }
-                et.set_tags(thumbnail_path, tags=video_date_metadata)
+                date = video_date_metadata["File:FileCreateDate"]
+                video_date_metadata.update(
+                    {
+                        "EXIF:DateTimeOriginal": date,
+                        "XMP:CreationDate": date,
+                    }
+                )
+                et.set_tags(
+                    thumbnail_path,
+                    tags=video_date_metadata,
+                    params=exiftool_params_write,
+                )
                 thumbnail_metadata_new = et.get_metadata(thumbnail_path)[0]
             else:
-                print(f"{Path(*thumbnail_path.parts[-4:])} => {None}")
+                # tqdm.write(f"{Path(*thumbnail_path.parts[-4:])} <= {None}")
+                pass
