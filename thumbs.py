@@ -18,14 +18,29 @@ def _normpath(path):
 class ProgramArgsNamespace(argparse.Namespace):
     backup: bool
     input_dir: Path
-    show_images: bool
+    show_images_unsafe: bool
 
 
 def get_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-b", "--backup", action="store_true")
-    parser.add_argument("-i", "--input-dir", default=os.getcwd(), type=_normpath)
-    parser.add_argument("-s", "--show-images", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="""
+            Apply metadata to video thumbnails from Facebook messenger data.
+            Assumes any .jpg image in any 'thumbnails' folder is a thumbnail,
+            and has a corresponding .mp4 video in its parent folder.
+        """
+    )
+    parser.add_argument(
+        "input_dir",
+        metavar="FOLDER",
+        type=_normpath,
+        help="Folder to search (recursively) for thumbnails in",
+    )
+    parser.add_argument(
+        "-s",
+        "--show-images-unsafe",
+        action="store_true",
+        help="Display image matching process (may cause entire OS to hang)",
+    )
     return parser.parse_args(namespace=ProgramArgsNamespace)
 
 
@@ -40,11 +55,9 @@ def hasSameAspectRatio(image1: "np.ndarray", image2: "np.ndarray"):
 
 if __name__ == "__main__":
     args = get_args()
-    exiftool_set_params = ["-P"]
-    if not args.backup:
-        exiftool_set_params.append("-overwrite_original")
-
-    thumbnail_paths = list(args.input_dir.glob("**/thumbnails/*.jpg"))
+    input_dir = args.input_dir
+    pattern = "*.jpg" if input_dir.parts[-1] == "thumbnails" else "**/thumbnails/*.jpg"
+    thumbnail_paths = list(args.input_dir.glob(pattern))
     already_mapped_videos = set()
     with exiftool.ExifToolHelper() as et:
         for thumbnail_path in tqdm(thumbnail_paths):
@@ -115,4 +128,3 @@ if __name__ == "__main__":
                 thumbnail_metadata_new = et.get_metadata(thumbnail_path)[0]
             else:
                 print(f"{Path(*thumbnail_path.parts[-4:])} => {None}")
-
