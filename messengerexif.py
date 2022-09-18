@@ -163,34 +163,37 @@ def run_exiftool(
 def read_json_files(folder_path, exiftool_path, backup=False, fail_fast=False):
     path = Path(folder_path).joinpath("**").joinpath("*.json")
     filepaths = glob.glob(str(path), recursive=True)
-    print(f"Reading JSON files in {str(folder_path)!r}...")
+    print(f"Reading JSON files in '{str(folder_path)}'...")
     for i, filepath in enumerate(filepaths):
         photos, videos = read_json(filepath)
         filepath_short = os.sep.join(os.path.normpath(filepath).split(os.path.sep)[-2:])
         info = f"file {i:0{len(str(len(filepaths)))}}/{len(filepaths)}"
         if not (photos or videos):
             print(f"{info} - {filepath_short}: No media")
-        
+            continue
+
         sub_info = info + f" - photos - {filepath_short}"
         if len(photos) == 0:
             print(f"{sub_info}: None found")
-        for photo in tqdm(photos, desc=sub_info):
-            run_exiftool(
-                exiftool_path, folder_path, photo, backup=backup, fail_fast=fail_fast
-            )
+        else:
+            for photo in tqdm(photos, desc=sub_info):
+                run_exiftool(
+                    exiftool_path, folder_path, photo, backup=backup, fail_fast=fail_fast
+                )
         
         sub_info = info + f" - videos - {filepath_short}"
         if len(photos) == 0:
             print(f"{sub_info}: None found")
-        for video in tqdm(videos, desc=sub_info):
-            run_exiftool(
-                exiftool_path,
-                folder_path,
-                video,
-                is_video=True,
-                backup=backup,
-                fail_fast=fail_fast,
-            )
+        else:
+            for video in tqdm(videos, desc=sub_info):
+                run_exiftool(
+                    exiftool_path,
+                    folder_path,
+                    video,
+                    is_video=True,
+                    backup=backup,
+                    fail_fast=fail_fast,
+                )
 
 
 def normalize_json(obj, timestamp=None):
