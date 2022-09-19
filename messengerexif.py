@@ -178,11 +178,15 @@ def read_json_files(folder_path, exiftool_path, backup=False, fail_fast=False):
         else:
             for photo in tqdm(photos, desc=sub_info):
                 run_exiftool(
-                    exiftool_path, folder_path, photo, backup=backup, fail_fast=fail_fast
+                    exiftool_path,
+                    folder_path,
+                    photo,
+                    backup=backup,
+                    fail_fast=fail_fast,
                 )
         
         sub_info = info + f" - videos - {filepath_short}"
-        if len(photos) == 0:
+        if len(videos) == 0:
             print(f"{sub_info}: None found")
         else:
             for video in tqdm(videos, desc=sub_info):
@@ -224,7 +228,7 @@ def read_json(path, photo_ext=(".jpg", ".png", ".gif"), video_ext=(".mp4",)):
 
     if "image" in json_file and isinstance(json_file["image"], dict):
         all_objs.append((json_file["image"], None))
-    
+
     all_objs = [o for o in all_objs if "uri" in o[0] and not o[0]["uri"].startswith("https://")]
     photo_objs = [o for o in all_objs if any(o[0]["uri"].endswith(e) for e in photo_ext)]
     video_objs = [o for o in all_objs if any(o[0]["uri"].endswith(e) for e in video_ext)]
